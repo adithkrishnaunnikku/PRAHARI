@@ -10,7 +10,7 @@ db = SessionLocal()
 
 
 # ----------------------------
-# Sample Data
+# Sample Data by ivan
 # ----------------------------
 
 citizens = [
