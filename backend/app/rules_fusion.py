@@ -1,5 +1,7 @@
 from typing import Optional
 
+from app.scam_phases import AUTHORITY, DRAIN, FABRICATED_EVIDENCE, HOOK, ISOLATION
+
 
 _RISK_MAP = {
     "SAFE": "LOW",
@@ -11,11 +13,11 @@ _RISK_MAP = {
 def fuse_results(rule_result: dict, llm_result: Optional[dict] = None) -> dict:
     rules_fired = rule_result.get("rules_fired", [])
     rule_score = rule_result.get("score", 0)
-    has_authority = "authority_impersonation" in rules_fired
-    has_isolation = "isolation_language" in rules_fired
-    has_payment = "payment_request" in rules_fired
-    has_legal = "fabricated_legal_language" in rules_fired
-    has_urgency = "urgency_threat" in rules_fired
+    has_authority = AUTHORITY in rules_fired
+    has_isolation = ISOLATION in rules_fired
+    has_payment = DRAIN in rules_fired
+    has_legal = FABRICATED_EVIDENCE in rules_fired
+    has_urgency = HOOK in rules_fired
 
     llm_confidence = 0.0
     llm_phases = []
@@ -89,7 +91,7 @@ def fuse_results(rule_result: dict, llm_result: Optional[dict] = None) -> dict:
 
 def _has_safe_account(rule_result: dict) -> bool:
     matches = rule_result.get("matches", {})
-    payment_matches = matches.get("payment_request", [])
+    payment_matches = matches.get(DRAIN, [])
     for m in payment_matches:
         if "safe account" in m.lower():
             return True

@@ -2,6 +2,16 @@ import os
 import re
 import logging
 
+from app.scam_phases import (
+    AUTHORITY,
+    CANONICAL_PHASES,
+    DRAIN,
+    FABRICATED_EVIDENCE,
+    HOOK,
+    ISOLATION,
+    LEGACY_LLM_PHASE_MAP,
+)
+
 logger = logging.getLogger(__name__)
 
 DISABLE_LLM = os.getenv("DISABLE_LLM", "false").lower() in ("true", "1", "yes")
@@ -25,7 +35,7 @@ if not DISABLE_LLM:
 SYSTEM_PROMPT = """You are a scam detection classifier for Indian digital arrest / cyber fraud calls.
 Analyze the following transcript and return a JSON object with these fields:
 
-- phases_detected: list of scam phase labels found (e.g., "authority_introduction", "fear_creation", "isolation", "payment_demand", "credential_harvest")
+- phases_detected: list of scam phase labels found (choose from: "Hook", "Authority", "Fabricated Evidence", "Isolation", "Drain")
 - highest_phase: highest numbered phase detected (1-5 scale)
 - confidence: float 0.0-1.0 of your detection confidence
 - claimed_agency: string name of agency impersonated, or null
@@ -89,7 +99,11 @@ def _parse_llm_response(raw: str) -> dict:
         return _build_empty_result("")
 
     result = _build_empty_result("")
-    result["phases_detected"] = data.get("phases_detected", [])
+    raw_phases = data.get("phases_detected", [])
+    result["phases_detected"] = sorted(
+        set(LEGACY_LLM_PHASE_MAP.get(p, p) for p in raw_phases),
+        key=lambda x: CANONICAL_PHASES.index(x) if x in CANONICAL_PHASES else 99,
+    )
     result["highest_phase"] = data.get("highest_phase", 0)
     result["confidence"] = float(data.get("confidence", 0.0))
     result["claimed_agency"] = data.get("claimed_agency")

@@ -1,5 +1,7 @@
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
+
+from app.scam_phases import AUTHORITY, DRAIN, FABRICATED_EVIDENCE, HOOK, ISOLATION
 
 AUTHORITY_PATTERNS = [
     r"\bCBI\b",
@@ -118,27 +120,27 @@ def check_rules(transcript: str) -> dict:
 
     rules_fired: List[str] = []
     if authority_hit:
-        rules_fired.append("authority_impersonation")
+        rules_fired.append(AUTHORITY)
     if isolation_hit:
-        rules_fired.append("isolation_language")
+        rules_fired.append(ISOLATION)
     if payment_hit:
-        rules_fired.append("payment_request")
+        rules_fired.append(DRAIN)
     if legal_hit:
-        rules_fired.append("fabricated_legal_language")
+        rules_fired.append(FABRICATED_EVIDENCE)
     if urgency_hit:
-        rules_fired.append("urgency_threat")
+        rules_fired.append(HOOK)
 
     matches: Dict[str, list] = {}
     if authority_hit:
-        matches["authority_impersonation"] = authority_matches
+        matches[AUTHORITY] = authority_matches
     if isolation_hit:
-        matches["isolation_language"] = isolation_matches
+        matches[ISOLATION] = isolation_matches
     if payment_hit:
-        matches["payment_request"] = payment_matches
+        matches[DRAIN] = payment_matches
     if legal_hit:
-        matches["fabricated_legal_language"] = legal_matches
+        matches[FABRICATED_EVIDENCE] = legal_matches
     if urgency_hit:
-        matches["urgency_threat"] = urgency_matches
+        matches[HOOK] = urgency_matches
 
     num_categories = len(rules_fired)
 
@@ -186,4 +188,32 @@ def check_rules(transcript: str) -> dict:
         "rules_fired": rules_fired,
         "matches": matches,
         "recommended_risk": recommended_risk,
+    }
+
+
+def check_rules_delta(previous_result: Optional[dict], full_text: str) -> dict:
+    """Compare current rules output against previous to detect new signals.
+
+    Args:
+        previous_result: The full dict returned by the last check_rules call,
+                         or None on first call.
+        full_text: The complete accumulated transcript.
+
+    Returns:
+        {
+            "rule_result": dict,       # same shape as check_rules()
+            "has_new_signal": bool,    # True if rules_fired, score, or
+                                       # recommended_risk changed vs previous
+        }
+    """
+    rule_result = check_rules(full_text)
+    has_new_signal = (
+        previous_result is None
+        or rule_result["rules_fired"] != previous_result.get("rules_fired", [])
+        or rule_result["score"] != previous_result.get("score", 0)
+        or rule_result["recommended_risk"] != previous_result.get("recommended_risk", "")
+    )
+    return {
+        "rule_result": rule_result,
+        "has_new_signal": has_new_signal,
     }
