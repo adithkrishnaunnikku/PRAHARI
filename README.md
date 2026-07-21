@@ -100,6 +100,11 @@ python scripts/loadtest.py --url http://localhost:8000 --requests 100 --concurre
 python scripts/generate_pdf.py --ring-id RING-demo
 ```
 
+## Project Report
+
+- Editable report: [`docs/PRAHARI_Project_Report.docx`](docs/PRAHARI_Project_Report.docx)
+- Submission PDF: [`output/pdf/PRAHARI_Project_Report.pdf`](output/pdf/PRAHARI_Project_Report.pdf)
+
 ## Known Limits
 
 - Mit's original evaluation harness contains 19 focused examples. PRAHARI also includes a reproducible 120-case English/Hindi/Hinglish synthetic benchmark with hard negatives and pre-payment timing; it remains a prototype benchmark, not field validation.
